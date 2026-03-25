@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Risk Intelligence</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f8; color: #1e293b; margin: 0; padding: 24px; }
+    .card { max-width: 900px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .header { background: #0f172a; color: #f8fafc; padding: 20px 24px; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .header p { margin: 8px 0 0; color: #cbd5e1; }
+    .section { padding: 20px 24px; border-top: 1px solid #e2e8f0; }
+    h2 { margin: 0 0 12px; font-size: 16px; color: #0f172a; }
+    .breakdown-row { margin: 8px 0; font-size: 14px; }
+    .risk-item { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin: 10px 0; }
+    .risk-meta { font-size: 12px; color: #475569; margin-bottom: 8px; }
+    .severity { display: inline-block; background: #dc2626; color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>Daily Risk Intelligence — {{ report.date }}</h1>
+      <p>{{ report.total_signals }} signals processed | {{ report.high_severity_count }} high severity</p>
+    </div>
+
+    <div class="section">
+      <h2>Executive Summary</h2>
+      <p>{{ report.executive_summary }}</p>
+    </div>
+
+    <div class="section">
+      <h2>Peril Breakdown</h2>
+      {% if report.peril_breakdown %}
+        {% for peril, count in report.peril_breakdown.items() %}
+          <div class="breakdown-row"><strong>{{ peril }}</strong> — {{ count }}</div>
+        {% endfor %}
+      {% else %}
+        <p>No high-severity perils today.</p>
+      {% endif %}
+    </div>
+
+    <div class="section">
+      <h2>Top Risks</h2>
+      {% if report.top_risks %}
+        {% for risk in report.top_risks %}
+          <div class="risk-item">
+            <div><strong>{{ risk.headline }}</strong></div>
+            <div class="risk-meta">
+              {{ risk.source }} | {{ risk.region }} | {{ risk.peril_type }} | {{ risk.published_at }}
+              <span class="severity">Severity {{ risk.severity }}</span>
+            </div>
+            <div>{{ risk.summary }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>No high-severity risk items met the threshold.</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
+
