@@ -1,0 +1,8 @@
+[
+  {"name": "Reuters Business", "url": "https://feeds.reuters.com/reuters/businessNews"},
+  {"name": "Insurance Journal", "url": "https://www.insurancejournal.com/feed/"},
+  {"name": "Reinsurance News", "url": "https://www.reinsurancene.ws/feed/"},
+  {"name": "Artemis", "url": "https://www.artemis.bm/feed/"},
+  {"name": "Carrier Management", "url": "https://www.carriermanagement.com/feed/"},
+  {"name": "The Insurer", "url": "https://www.theinsurer.com/feed/"}
+]
