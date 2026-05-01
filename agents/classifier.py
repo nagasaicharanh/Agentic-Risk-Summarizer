@@ -11,7 +11,7 @@ from schemas import RawArticle, RiskItem, RiskItemBatch
 SYSTEM_PROMPT = """You are a reinsurance risk analyst at a leading reinsurer.
 Classify each article into exactly one peril type and assign a severity score.
 
-Peril types: nat-cat, cyber, liability, market, operational
+Peril types: nat-cat, cyber, liability, market, operational, regulatory
 Severity scale:
 1 = Informational / industry news
 2 = Minor event, limited market impact
@@ -23,7 +23,9 @@ Requirements:
 - Return an item for every input article.
 - Keep summary concise (maximum 2 sentences).
 - Preserve each article's source and published_at fields.
-- If an article is not related to insurance risk, assign severity = 1.
+- severity MUST be a raw integer (e.g., 3), NOT a string (e.g., "3").
+- peril_type MUST be one of the specified types.
+- If an article is not related to insurance risk, assign severity = 1 and peril_type = 'market'.
 """
 
 

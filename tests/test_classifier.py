@@ -50,6 +50,15 @@ class TestClassifier(unittest.TestCase):
                 summary="Routine news item. Limited insurance impact expected.",
                 published_at="2026-04-25T07:00:00Z",
             ),
+            RiskItem(
+                headline="Regulatory changes in UK",
+                source="Test",
+                peril_type="regulatory",
+                severity=3,
+                region="UK",
+                summary="New capital requirements for offshore reinsurance.",
+                published_at="2026-04-25T07:00:00Z",
+            ),
         ]
 
         # Override internals to keep this test fully offline and deterministic.
@@ -74,8 +83,8 @@ class TestClassifier(unittest.TestCase):
         finally:
             classifier_module.ChatPromptTemplate.from_messages = original_prompt_builder
 
-        # 12 inputs with batch size 10 creates 2 batches, each returns one high-severity item.
-        self.assertEqual(len(result), 2)
+        # 12 inputs with batch size 10 creates 2 batches, each returns two high-severity items (severity 4 and 3).
+        self.assertEqual(len(result), 4)
         self.assertTrue(all(item.severity >= 3 for item in result))
 
 
