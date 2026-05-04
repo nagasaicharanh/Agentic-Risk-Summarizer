@@ -36,7 +36,7 @@ Automates daily collection, classification, summarization, and delivery of insur
 3. **Summarizer Agent** generates digestible risk intelligence output.
 4. **Delivery Layer** renders HTML and sends via Gmail SMTP.
 
-## ðºï¸ Architecture
+## 🏗 Architecture
 ![Architecture Diagram](screenshots/ArchitectureDiagram.png)
 
 ---
