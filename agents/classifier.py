@@ -1,6 +1,7 @@
 import json
 from collections.abc import Iterable
 
+from groq import BadRequestError
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 
@@ -46,6 +47,17 @@ class RiskClassifier:
         return high_severity
 
     def _classify_batch(self, batch: list[RawArticle]) -> list[RiskItem]:
+        try:
+            return self._classify_batch_once(batch)
+        except BadRequestError as error:
+            if self._is_retryable_tool_error(error) and len(batch) > 1:
+                midpoint = len(batch) // 2
+                first_half = self._classify_batch(batch[:midpoint])
+                second_half = self._classify_batch(batch[midpoint:])
+                return first_half + second_half
+            raise
+
+    def _classify_batch_once(self, batch: list[RawArticle]) -> list[RiskItem]:
         formatted_articles = [
             {
                 "headline": article.title,
@@ -68,6 +80,16 @@ class RiskClassifier:
             {"articles_json": json.dumps(formatted_articles, ensure_ascii=False)}
         )
         return result.items
+
+    @staticmethod
+    def _is_retryable_tool_error(error: BadRequestError) -> bool:
+        body = getattr(error, "body", {})
+        if isinstance(body, dict):
+            code = body.get("error", {}).get("code")
+            if code == "tool_use_failed":
+                return True
+        message = str(error)
+        return "tool_use_failed" in message or "Failed to call a function" in message
 
     def _get_structured_llm(self):
         llm = self._llm or ChatGroq(

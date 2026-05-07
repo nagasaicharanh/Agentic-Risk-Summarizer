@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from agents.classifier import RiskClassifier
@@ -15,6 +16,36 @@ class _FakeStructuredLLM:
 class _FakePrompt:
     def __or__(self, other):
         return other
+
+
+class _FakeBadRequestError(Exception):
+    pass
+
+
+class _FakeStructuredLLMWithOneToolFailure:
+    def __init__(self):
+        self._failed_once = False
+
+    def invoke(self, payload):
+        articles = payload["articles_json"]
+        article_count = len(json.loads(articles))
+        if article_count >= 10 and not self._failed_once:
+            self._failed_once = True
+            raise _FakeBadRequestError("tool_use_failed: Failed to call a function")
+
+        items = [
+            RiskItem(
+                headline=f"Recovered item {idx}",
+                source="Test",
+                peril_type="operational",
+                severity=3,
+                region="Global",
+                summary="Recovered via smaller retry batch.",
+                published_at="2026-04-25T07:00:00Z",
+            )
+            for idx in range(article_count)
+        ]
+        return RiskItemBatch(items=items)
 
 
 class TestClassifier(unittest.TestCase):
@@ -85,6 +116,37 @@ class TestClassifier(unittest.TestCase):
 
         # 12 inputs with batch size 10 creates 2 batches, each returns two high-severity items (severity 4 and 3).
         self.assertEqual(len(result), 4)
+        self.assertTrue(all(item.severity >= 3 for item in result))
+
+    def test_retries_by_splitting_on_tool_failure(self):
+        items = [
+            RawArticle(
+                title=f"Article {idx}",
+                url=f"https://example.com/{idx}",
+                body="content",
+                source="Test",
+                published_at="2026-04-25T07:00:00Z",
+            )
+            for idx in range(10)
+        ]
+
+        classifier = RiskClassifier(llm=object())
+        fake_llm = _FakeStructuredLLMWithOneToolFailure()
+        classifier._get_structured_llm = lambda: fake_llm  # type: ignore[method-assign]
+
+        from agents import classifier as classifier_module
+
+        original_prompt_builder = classifier_module.ChatPromptTemplate.from_messages
+        original_bad_request_error = classifier_module.BadRequestError
+        classifier_module.ChatPromptTemplate.from_messages = lambda *_args, **_kwargs: _FakePrompt()
+        classifier_module.BadRequestError = _FakeBadRequestError
+        try:
+            result = classifier.classify(items)
+        finally:
+            classifier_module.ChatPromptTemplate.from_messages = original_prompt_builder
+            classifier_module.BadRequestError = original_bad_request_error
+
+        self.assertEqual(len(result), 10)
         self.assertTrue(all(item.severity >= 3 for item in result))
 
 
